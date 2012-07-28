@@ -53,7 +53,7 @@ If you have not specified the ret query string parameter, the accept header is u
 
 Here are the allowed content types for json :
   - text/javascript
-	- application/json
+  - application/json
   - application/x-javascript
   - text/x-javascript
   - text/x-json
