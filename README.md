@@ -1,5 +1,5 @@
 jnode
-=====
+====
 
 nodejs api using jquery simplicity. 
 
@@ -16,7 +16,7 @@ What jnode brings :
 - the each, inArray, merge, grep, map,  function of jquery
 
 How to make an handler
-=====
+====
 
 The most explicit is the quit handler bundled with jnode :
 
@@ -36,11 +36,11 @@ As you can see, the function passed to the $ function expects 3 arguments : the 
 japi is a function built-in to jnode used to wrap the result of your handler. In the quit handler, a simple string is retrurned but it also could have been a JSON object. The JSON object would then have been wrapped by the callback if the expected result is jsonp.
 
 How to make japi know which content type is expected
-=====
+====
 You have 2 possibilities to make japi understand which content you expect : query string or HTTP Accept header.
 
 Query String
-====
+=====
 If you want a to have json or jsonp in your response, you have to specify it in the ret query string parameter :
 
 http://192.168.68.11/quit.jnode?ret=json
@@ -48,7 +48,7 @@ http://192.168.68.11/quit.jnode?ret=json
 http://192.168.68.11/quit.jnode?ret=jsonp
 
 Accept header
-====
+=====
 If you have not specified the ret query string parameter, the accept header is used. Which is basically what jquery on client does change.
 
 Here are the allowed content types for json :
