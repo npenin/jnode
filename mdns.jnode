@@ -1,0 +1,27 @@
+var mdns=require('mdns');
+var uri=require('url');
+
+var defaultOptions={transport:'tcp', 'protocol':'http', 'wait':1000};
+
+exports.handle=function(req,res, japi)
+{
+	var services=new Array();
+	try
+	{
+		var browser=$('mdns').createBrowser(mdns[req.url.query.transport](req.url.query.protocol));
+		browser.on('serviceUp', function(service){ 
+			services.push(service); 
+		});
+
+		browser.start();
+	}
+	catch(error)
+	{
+		res.writeHead(500, 'Error');
+		res.write(JSON.stringify(error));
+	}
+	setTimeout(function(){ 
+		browser.stop();
+		japi(services);
+		}, req.url.query.wait);
+}
