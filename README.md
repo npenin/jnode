@@ -20,8 +20,8 @@ How to make an handler
 
 The most explicit is the quit handler bundled with jnode :
 
-$(function(req,res,japi){
 ```js
+$(function(req,res,japi){
 japi('Will be turned off when all the '+server.connections+' connection(s) will be closed');
 req.connection.destroy();
 server.close(function()
