@@ -1,12 +1,18 @@
+var jnodeFolder=__dirname+'/';
+var cwd=process.cwd()+'/'
 window={};
-require('vm').runInThisContext(require('fs').readFileSync('jquery-core.js'), 'jquery-core.js');
+require('vm').runInThisContext(require('fs').readFileSync(jnodeFolder+'jquery-core.js'), 'jquery-core.js');
 global.$=jQuery
 
 var originalInit=$.fn.init;
 
 $.extend($.fn,{init:function(moduleName){
 	if(typeof(moduleName)==='string')
+	{
+		if(moduleName.startsWith('./') || moduleName.startsWith('../'))
+			moduleName=cwd + moduleName;
 		return $[moduleName] || ($[moduleName]=require(moduleName));
+	}
 	return originalInit.apply(null,arguments);
 },
 on:function(event, handler){
@@ -213,10 +219,10 @@ exports.init=function(config)
 	}
 	console.log(routes);
 }
-
-if($('fs').existsSync('jnode.jconfig'))
+var jnodeConfig=cwd+'jnode.jconfig';
+if($('fs').existsSync(jnodeConfig))
 {
-	var config=JSON.parse($('fs').readFileSync('jnode.jconfig'));
+	var config=JSON.parse($('fs').readFileSync(jnodeConfig));
 	for(var key in config)
 	{
 		console.log('initializing '+key);
@@ -225,7 +231,11 @@ if($('fs').existsSync('jnode.jconfig'))
 		else
 			context={request:{url:{pathname:key.substring(1)}}};
 			
-		var init=$(key).init;
+		var init;
+		if(key=='jnode')
+			init=exports.init;
+		else
+			init=$(key).init;
 		if(init)
 			init(config[key]);
 		console.log('initialized '+key);
