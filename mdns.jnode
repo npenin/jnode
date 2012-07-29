@@ -3,12 +3,13 @@ var uri=require('url');
 
 var defaultOptions={transport:'tcp', 'protocol':'http', 'wait':1000};
 
-exports.handle=function(req,res, japi)
+var handle=function(req,res, japi)
 {
+	var options=$.extend({}, defaultOptions, req.url.query);
 	var services=new Array();
 	try
 	{
-		var browser=$('mdns').createBrowser(mdns[req.url.query.transport](req.url.query.protocol));
+		var browser=$('mdns').createBrowser(mdns[options.transport](options.protocol));
 		browser.on('serviceUp', function(service){ 
 			services.push(service); 
 		});
@@ -23,5 +24,14 @@ exports.handle=function(req,res, japi)
 	setTimeout(function(){ 
 		browser.stop();
 		japi(services);
-		}, req.url.query.wait);
-}
+		}, options.wait);
+};
+
+$(handle);
+
+exports.init=function(){
+	$.on('/api/mdns/{transport}/{protocol}/{wait}', handle);
+	$.on('/api/mdns/{transport}/{protocol}', handle);
+	$.on('/api/mdns/{transport}', handle);
+	$.on('/api/mdns', handle);
+};

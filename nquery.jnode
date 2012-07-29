@@ -13,11 +13,108 @@ on:function(event, handler){
 	this.each(function(){ this.on(event,handler) });
 }
 });
-var routes={};
+var routes={}, initiated=[];
 String.prototype.endsWith=function(s)
 {
 	return this.substring(this.length-s.length)==s;
 };
+String.prototype.startsWith=function(s)
+{
+	return this.substring(0,s.length)==s;
+};
+
+var findHandler=function(url, secondTime)
+{
+	if(typeof(url)=='string')
+		url=$('url').parse(url, true);
+	var handler=routes[url.pathname];
+	if(handler)
+		return handler;
+	
+	for(var route in routes)
+	{
+		var urlTemplateEx=/\{([^}]+)\}/g;
+		// /api/mdns/{transport}/{protocol}
+		// /api/mdns/tcp/http
+		var indexOfFirstParam=route.indexOf('{');
+		if(indexOfFirstParam==-1)
+			continue;
+		// /api/mdns
+		var rootRoute=route.substring(0,indexOfFirstParam-1);
+		if(!url.pathname.startsWith(rootRoute))
+			continue;
+		var parameterizedRoute=route.substring(rootRoute.length);
+		var parameterizedPath=url.pathname.substring(rootRoute.length);
+		console.log(parameterizedRoute +'=>'+parameterizedPath);
+		var routeDoesNotMatch=false;
+		var parameters={};
+		var matchedParameter;
+		while(matchedParameter=urlTemplateEx.exec(route))
+		{
+			if(!matchedParameter)
+			{
+				console.log('breaking matchedParameter');
+				console.log(parameters);
+				routeDoesNotMatch=true;
+				break;
+			}
+			var endingCharacter=route.charAt(matchedParameter.index+matchedParameter[0].length);
+			var pattern;
+			if(!endingCharacter)
+				pattern=route.charAt(matchedParameter.index-1)+'(.+)$';
+			else
+				pattern='\\'+route.charAt(matchedParameter.index-1)+'([^\\'+endingCharacter+']+)';
+			console.log(pattern);
+			var paramMatch=new RegExp(pattern).exec(parameterizedPath);
+			if(paramMatch)
+			{
+				parameters[matchedParameter[1]]=paramMatch[1];
+				parameterizedPath=parameterizedPath.substring(paramMatch[0].length);
+			}
+			else
+			{
+				console.log('breaking paramMatch');
+				console.log(parameters);
+				
+				routeDoesNotMatch=true;
+				break;
+			}
+		}
+		
+		if(routeDoesNotMatch)
+			continue;
+		console.log(parameters);
+		$.extend(url.query, parameters);
+		return routes[route];
+	}
+	var filePath='.'+url.pathname;
+	if(!filePath.endsWith('.jnode'))
+		return staticHandler;
+	else if(!secondTime && $('fs').existsSync(filePath))
+	{
+		var handler=$(filePath);
+		if(handler.handle)
+			$(handler.handle);
+		return findHandler(url,true);
+	}
+	else
+		return null;
+}
+
+var staticHandler=function(req, res)
+{
+	var filePath='.'+req.url.pathname;
+	$('fs').readFile(filePath, function(err, data){
+		if(err)
+		{
+			console.log(err);
+			res.writeHead(500, {'Content-Type':'text/plain'});
+			res.end(JSON.stringify(err));
+		}
+		res.writeHead(200);
+		res.end(data);
+	});
+}
 var japi=function(req,res){
 	return function(data){
 		switch(req.url.query.ret)
@@ -25,14 +122,16 @@ var japi=function(req,res){
 			case 'json':
 				res.setHeader('Content-type', 'application/json');
 				res.end(JSON.stringify(data), 'utf8');
+				break;
 			case 'jsonp':
 				res.setHeader('Content-type', 'application/json');
 				res.end(req.url.query.callback+'('+JSON.stringify(data)+')', 'utf8');
+				break;
 			case undefined:
 				accepts=req.headers.accept.split(',');
 				for(var i=0; i<accepts.length; i++)
 				{
-					switch(accepts[i])
+					switch(accepts[i].split(';')[0])
 					{
 						case 'text/javascript':
 						case 'application/json':
@@ -65,42 +164,21 @@ $.extend($, {handle:function(req,res, secondTime)
 {
 	global.context={request:req, response:res};
 	req.url=$('url').parse(req.url, true);
-	var handler=routes[req.url.pathname];
+	var handler=findHandler(req.url);
 	if(handler)
 		return handler(req,res,japi(req,res));
 
-	var filePath='.'+req.url.pathname;
-	if(!filePath.endsWith('.jnode'))
-	{
-		$('fs').readFile(filePath, function(err, data){
-			if(err)
-			{
-				console.log(err);
-				res.writeHead(500, {'Content-Type':'text/plain'});
-				res.end(JSON.stringify(err));
-			}
-			res.writeHead(200);
-			res.end(data);
-		});
-	}
-	else if(!secondTime && $('fs').existsSync(filePath))
-		{
-			var handler=$(filePath);
-			if(handler.handle)
-				$(handler.handle);
-			$.handle(req,res,true);
-		}
-		else
-		{
-			res.writeHead(404, {'Content-Type':'text/plain'});
-			res.end('Oops, Page not found\n'+filePath);
-		}
+	res.writeHead(404, {'Content-Type':'text/plain'});
+	res.end('Oops, jnode could not find anything to match this request\n'+filePath);
 },
 ready:function(handler){
 	routes[context.request.url.pathname]=handler;
 },
 ajax:$('http').request,
-
+on:function(urlTemplate, handler)
+{
+	routes[urlTemplate]=handler;
+}
 });
 
 rootjQuery.ready=$.ready;
@@ -123,6 +201,17 @@ exports.run=function(host, port){
 exports.init=function(config)
 {
 	exports.run(config.host, config.port);
+	for(var route in config.routes)
+	{
+		var key=config.routes[route];
+		console.log('Resolving '+key);
+		if(key.substring(0,2)!='./')
+			context={request:{url:{pathname:key}}};
+		else
+			context={request:{url:{pathname:key.substring(1)}}};
+		routes[route]=findHandler(key);
+	}
+	console.log(routes);
 }
 
 if($('fs').existsSync('jnode.jconfig'))
