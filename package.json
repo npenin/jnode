@@ -1,0 +1,32 @@
+{
+  "name": "jnode",
+  "version": "0.0.1",
+  "description": "write less, do more nodejs",
+  "main": "./api.jnode",
+  "bugs": {
+    "url": "http://github.com/npenin/jnode/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/npenin/jnode.git"
+  },
+  "author": "Nicolas Penin <nicolas.penin@dragon-angel.fr>",
+  "dependencies": {
+    "gpio": "~0.1.0",
+    "mdns": "~0.0.7",
+    "mongoose": "~2.7.2",
+    "libxmljs": "~0.6.0"
+  },
+  "devDependencies": {
+	"jnode-blaster": "~0.0.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "jnode",
+    "api",
+    "jquery"
+  ],
+  "license": "MsPl"
+}
