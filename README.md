@@ -15,6 +15,39 @@ What jnode brings :
 - the isFunction, isArray, ... of jquery
 - the extend, each, inArray, merge, grep, map,  function of jquery
 
+How to get jnode
+====
+
+```bash
+npm install jnode
+```
+
+How to run jnode
+====
+```bash
+node jnode
+```
+
+how to configure jnode
+====
+```js
+{
+  "./ir-blaster/blast.jnode":{"blaster":"192.168.68.23"}, 
+  "jnode":{
+    "host":"192.168.68.11",
+    "port":80, 
+    "routes":
+    {
+      "/api/blast/{dev}/{cmd}":"/blaster/blast.jnode", 
+      "/api/jnode-admin/quit":"/quit.jnode"
+    }
+  },
+  "./mdns.jnode":null, 
+  "./gpio-blaster/rts.jnode":null 
+}
+```
+
+
 How to make an handler
 ====
 
