@@ -18,7 +18,7 @@ What jnode brings :
 How to make an handler
 ====
 
-The most explicit is the quit handler bundled with jnode :
+A picture is worth a thousand words :
 
 ```js
 $(function(req,res,japi){
@@ -31,9 +31,9 @@ server.close(function()
 });
 ```
 
-As you can see, the function passed to the $ function expects 3 arguments : the request, the response, and the japi.
+As you can see, the function passed to $ expects 3 arguments : the request, the response, and the japi.
 
-japi is a function built-in to jnode used to wrap the result of your handler. In the quit handler, a simple string is retrurned but it also could have been a JSON object. The JSON object would then have been wrapped by the callback if the expected result is jsonp.
+japi is a function built into jnode used to wrap the result of your handler. In the quit handler, a simple string is returned but it also could have been a JSON object. The JSON object would then have been wrapped by the callback if the expected result is jsonp.
 
 How to make japi know which content type is expected
 ====
