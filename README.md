@@ -13,7 +13,7 @@ What jnode brings :
 - an api server (with the ability to handle automatic wrapping on result depending on content type expected by the client)
 - the $ function of jquery : you can load a module using the $ function or export an handler (discussed below)
 - the isFunction, isArray, ... of jquery
-- the each, inArray, merge, grep, map,  function of jquery
+- the extend, each, inArray, merge, grep, map,  function of jquery
 
 How to make an handler
 ====
