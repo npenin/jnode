@@ -2,24 +2,22 @@ var jnodeFolder=__dirname+'/';
 var cwd=process.cwd()+'/'
 window={};
 require('vm').runInThisContext(require('fs').readFileSync(jnodeFolder+'jquery-core.js'), 'jquery-core.js');
-global.$=jQuery
-
-var originalInit=$.fn.init;
-
-$.extend($.fn,{init:function(moduleName){
+global.$=function(moduleName){
 	if(typeof(moduleName)==='string')
 	{
 		if(moduleName.startsWith('./') || moduleName.startsWith('../'))
 			moduleName=cwd + moduleName;
 		return $[moduleName] || ($[moduleName]=require(moduleName));
 	}
-	return originalInit.apply(null,arguments);
-},
-on:function(event, handler){
-	this.each(function(){ this.on(event,handler) });
-}
-});
-var routes={}, initiated=[];
+	if($.isFunction(moduleName))
+	{
+		$.get(context.request.url.pathname, moduleName);
+		return $;
+	}
+};
+
+jQuery.extend($, jQuery);
+
 String.prototype.endsWith=function(s)
 {
 	return this.substring(this.length-s.length)==s;
@@ -29,199 +27,85 @@ String.prototype.startsWith=function(s)
 	return this.substring(0,s.length)==s;
 };
 
-var findHandler=function(url, secondTime)
-{
-	if(typeof(url)=='string')
-		url=$('url').parse(url, true);
-	var handler=routes[url.pathname];
-	if(handler)
-		return handler;
-	
-	for(var route in routes)
-	{
-		var urlTemplateEx=/\{([^}]+)\}/g;
-		// /api/mdns/{transport}/{protocol}
-		// /api/mdns/tcp/http
-		var indexOfFirstParam=route.indexOf('{');
-		if(indexOfFirstParam==-1)
-			continue;
-		// /api/mdns
-		var rootRoute=route.substring(0,indexOfFirstParam-1);
-		if(!url.pathname.startsWith(rootRoute))
-			continue;
-		var parameterizedRoute=route.substring(rootRoute.length);
-		var parameterizedPath=url.pathname.substring(rootRoute.length);
-		console.log(parameterizedRoute +'=>'+parameterizedPath);
-		var routeDoesNotMatch=false;
-		var parameters={};
-		var matchedParameter;
-		while(matchedParameter=urlTemplateEx.exec(route))
-		{
-			if(!matchedParameter)
-			{
-				console.log('breaking matchedParameter');
-				console.log(parameters);
-				routeDoesNotMatch=true;
-				break;
-			}
-			var endingCharacter=route.charAt(matchedParameter.index+matchedParameter[0].length);
-			var pattern;
-			if(!endingCharacter)
-				pattern=route.charAt(matchedParameter.index-1)+'(.+)$';
-			else
-				pattern='\\'+route.charAt(matchedParameter.index-1)+'([^\\'+endingCharacter+']+)';
-			console.log(pattern);
-			var paramMatch=new RegExp(pattern).exec(parameterizedPath);
-			if(paramMatch)
-			{
-				parameters[matchedParameter[1]]=paramMatch[1];
-				parameterizedPath=parameterizedPath.substring(paramMatch[0].length);
-			}
-			else
-			{
-				console.log('breaking paramMatch');
-				console.log(parameters);
-				
-				routeDoesNotMatch=true;
-				break;
-			}
-		}
-		
-		if(routeDoesNotMatch)
-			continue;
-		console.log(parameters);
-		$.extend(url.query, parameters);
-		return routes[route];
-	}
-	var filePath='.'+url.pathname;
-	if(!filePath.endsWith('.jnode'))
-		return staticHandler;
-	else if(!secondTime && $('fs').existsSync(filePath))
-	{
-		var handler=$(filePath);
-		if(handler.handle)
-			$(handler.handle);
-		return findHandler(url,true);
-	}
-	else
-		return null;
-}
+// var staticHandler=function(req, res)
+// {
+	// var filePath='.'+req.url.pathname;
+	// $('fs').readFile(filePath, function(err, data){
+		// if(err)
+		// {
+			// console.log(err);
+			// res.writeHead(500, {'Content-Type':'text/plain'});
+			// res.end(JSON.stringify(err));
+		// }
+		// res.writeHead(200);
+		// res.end(data);
+	// });
+// }
 
-var staticHandler=function(req, res)
-{
-	var filePath='.'+req.url.pathname;
-	$('fs').readFile(filePath, function(err, data){
-		if(err)
-		{
-			console.log(err);
-			res.writeHead(500, {'Content-Type':'text/plain'});
-			res.end(JSON.stringify(err));
-		}
-		res.writeHead(200);
-		res.end(data);
-	});
-}
-var japi=function(req,res){
-	return function(data){
-		switch(req.url.query.ret)
-		{
-			case 'json':
-				res.setHeader('Content-type', 'application/json');
-				res.end(JSON.stringify(data), 'utf8');
-				break;
-			case 'jsonp':
-				res.setHeader('Content-type', 'application/json');
-				res.end(req.url.query.callback+'('+JSON.stringify(data)+')', 'utf8');
-				break;
-			case undefined:
-				accepts=req.headers.accept.split(',');
-				for(var i=0; i<accepts.length; i++)
-				{
-					switch(accepts[i].split(';')[0])
-					{
-						case 'text/javascript':
-						case 'application/json':
-						case 'application/x-javascript':
-						case 'text/x-javascript':
-						case 'text/x-json':
-							res.setHeader('Content-type', accepts[i]);
-							res.end(JSON.stringify(data), 'utf8');
-							return;
-						case 'application/jsonp':
-						case 'text/x-jsonp':
-							res.setHeader('Content-type', accepts[i]);
-							res.end(req.url.query.callback+'('+JSON.stringify(data)+')', 'utf8');
-							return;
-					}
-				}
-				if(typeof(data)!='string')
-					res.end(JSON.stringify(data));
-				else
-					res.end(data);
 
-				break;
-			default:
-				res.end(data);
-				break;
-		}
-	};
-}
-$.extend($, {handle:function(req,res, secondTime)
-{
-	global.context={request:req, response:res};
-	req.url=$('url').parse(req.url, true);
-	var handler=findHandler(req.url);
-	if(handler)
-		return handler(req,res,japi(req,res));
+var express=require('express');
+var app=express();
+$.extend($, app);
+$.get('/', function(req,res){ res.redirect('/index.html') });
 
-	res.writeHead(404, {'Content-Type':'text/plain'});
-	res.end('Oops, jnode could not find anything to match this request\n'+filePath);
-},
-ready:function(handler){
-	routes[context.request.url.pathname]=handler;
-},
-ajax:$('http').request,
-on:function(urlTemplate, handler)
-{
-	routes[urlTemplate]=handler;
-}
-});
+
+$.extend($, {ajax:$('http').request});
 
 rootjQuery.ready=$.ready;
-var server;
 exports.run=function(host, port){
 	if(typeof(server)!='undefined')
 		return console.log('server already running');
-	global.server=server=$('http').createServer();
-	server.on('request', $.handle);
-	server.listen(port, host);
+	global.server=$('http').createServer(app);
 	server.on('clientError', function(e){ console.log(e.message);});
 	server.on('connection', function(socket){ socket.on('error', function(e){ console.log(e.message); }); });
 
 	server.on('error', function(e) {
 		console.log('problem with request: ' + e.message);
 	});
+	server.listen(port, host);
 	console.log('Server running at http://'+host+':'+port+'/');
+}
+
+var rewrite=function(target)
+{
+	return function(req,res,next){ 
+		$.each($.routes.get, function(){
+			if(this.match(target))
+			{
+				$.each(this.callbacks,function(){
+					this(req,res,next);
+				});
+				next('route');
+			}
+		});
+	}
 }
 
 exports.init=function(config)
 {
-	exports.run(config.host, config.port);
+	$.use(function(req,res,next)
+	{
+		console.log(req.path);
+		next();
+	});
+	
 	for(var route in config.routes)
 	{
-		var key=config.routes[route];
-		console.log('Resolving '+key);
-		if(key.substring(0,2)!='./')
-			context={request:{url:{pathname:key}}};
-		else
-			context={request:{url:{pathname:key.substring(1)}}};
-		routes[route]=findHandler(key);
+		$.get(route, function(req,res){ res.redirect(config.routes[req.route.path]) });
 	}
-	console.log(routes);
+	for(var staticFolder in config["static"])
+	{
+		app.use(config["static"][staticFolder], express.static(cwd+staticFolder));
+		console.log('registered static handler for '+cwd+staticFolder+' at '+config["static"][staticFolder]);
+	}
+	app.use(app.router);
+	exports.run(config.host, config.port);
 }
-var jnodeConfig=cwd+'jnode.jconfig';
+
+var jnodeConfig=cwd+'jnode.config';
 if($('fs').existsSync(jnodeConfig))
 {
+$.configure(function(){
 	var config=JSON.parse($('fs').readFileSync(jnodeConfig));
 	for(var key in config)
 	{
@@ -241,6 +125,7 @@ if($('fs').existsSync(jnodeConfig))
 		console.log('initialized '+key);
 	}
 	context=null;
+});
 }
 
 if(require.main===module)
