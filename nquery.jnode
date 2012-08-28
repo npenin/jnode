@@ -2,20 +2,64 @@ var jnodeFolder=__dirname+'/';
 var cwd=process.cwd()+'/'
 require('./setup.js');
 
-var wrapper=function(req,res, next){
-    next(req,$('send')(req,res));
+var japi=function(req,res)
+{
+    return function(data)
+    {
+        switch(req.query.ret)
+        {
+            case 'json':
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify(data), 'utf8');
+            break;
+            case 'jsonp':
+                res.setHeader('Content-type', 'text/javascript');
+                res.end(res.query.callback+'('+JSON.stringify(data)+')', 
+                'utf8');
+            break;
+            default:
+                var accepts=req.headers.accept.split(',');
+                for(var i=0;i<accepts.length; i++)
+                {
+                    switch(accepts[i])
+                    {
+                        case 'text/javascript':
+                        case 'application/jsonp':
+                        case 'applicaiton/x-javascript':
+                        case 'text/x-jsonp':
+                            res.setHeader('Content-type', 
+                            'text/javascript');
+                            res.end(req.query.callback+'('+JSON.stringify(data)+')', 'utf8');
+                            break;
+                        case 'application/json':
+                        case 'text/x-json':
+                            res.setHeader('Content-type', 
+                            'application/json');
+                            res.end(JSON.stringify(data), 'utf8');
+                        break;
+                    }
+                }
+        }
+    }
 }
+
+var wrapper=function wrapper(req, res, next){
+    $.extend(req, $('url').parse(req.url, true));
+    res.send=japi(req,res);
+	console.log(req.url);
+    next();
+}
+
+process.env.DEBUG='connect:dispatcher';
 
 /* setup connect */
 var connect=$('connect');
 var app=connect();
 app.use(connect.logger('dev'));
 $.extend($, app);
-//$.use(wrapper);
 
 /* setup router */
 var router=$('router')();
-//$.use(router);
 $.extend($, router);
 
 $.get('/', '/index.html');
@@ -47,8 +91,8 @@ exports.init=function(config)
 		$.use(config["static"][staticFolder], connect.static(cwd+staticFolder));
 		console.log('registered static handler for '+cwd+staticFolder+' at '+config["static"][staticFolder]);
 	}
-	$.use(wrapper);
-	$.use(router);
+	app.use(wrapper);
+	app.use(router);
 	exports.run(config.host, config.port);
 }
 

@@ -14,7 +14,7 @@ var register=function(verb, path)
 			});					
 		}
 		else
-				$[verb](route,path);
+			$[verb](route,path);
 		return this;
 	}
 }
