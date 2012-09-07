@@ -1,47 +1,63 @@
 var jnodeFolder=__dirname+'/';
 var cwd=process.cwd()+'/'
 require('./setup.js');
+var accept=require('accept/index.js');
 
-var japi=function(req,res)
+global.japi=function(req,res)
 {
     return function(data)
     {
-        switch(req.query.ret)
-        {
-            case 'json':
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify(data), 'utf8');
-            break;
-            case 'jsonp':
-                res.setHeader('Content-type', 'text/javascript');
-                res.end(res.query.callback+'('+JSON.stringify(data)+')', 
-                'utf8');
-            break;
-            default:
-                var accepts=req.headers.accept.split(',');
-                for(var i=0;i<accepts.length; i++)
-                {
-                    switch(accepts[i])
-                    {
-                        case 'text/javascript':
-                        case 'application/jsonp':
-                        case 'applicaiton/x-javascript':
-                        case 'text/x-jsonp':
-                            res.setHeader('Content-type', 
-                            'text/javascript');
-                            res.end(req.query.callback+'('+JSON.stringify(data)+')', 'utf8');
-                            break;
-                        case 'application/json':
-                        case 'text/x-json':
-                            res.setHeader('Content-type', 
-                            'application/json');
-                            res.end(JSON.stringify(data), 'utf8');
-                        break;
-                    }
-                }
-        }
+		var contentType;
+		for(var key in japi.keys)
+		{
+			if(typeof(req.query[key])!='undefined' && req.query[key]==japi.keys[key].value)
+			{
+				contentType=japi.keys[key].contentType;
+			}
+		}
+
+		var contentType=accept(req.headers.accept, ['application/json']);
+		
+		return japi.contentTypes[contentType](req,res,data);
     }
 }
+
+japi.on=function(key,value,contentType)
+{
+	if(typeof(japi.keys)=='undefined')
+		japi.keys={};
+	japi.keys[key]={ value:value, contentType:contentType };
+}
+
+japi.register=function (handler)
+{
+
+	for(var i=1;i<arguments.length; i++)
+	{
+		if(typeof(japi.contentTypes)=='undefined')
+			japi.contentTypes={};
+		
+		var contentType=arguments[i];
+		japi.contentTypes[contentType]=
+		function(req,res,data){
+			res.setHeader('Content-type', contentType);
+			switch(handler.length)
+			{
+				case 1:
+					return handler(data);
+					break;
+				case 2:
+					return handler(res,data);
+					break;
+				default:
+					return handler(req,res,data);
+					break;
+			}			
+		}
+	}
+}
+
+require('./json.mime');
 
 var wrapper=function wrapper(req, res, next){
     $.extend(req, $('url').parse(req.url, true));
@@ -50,7 +66,7 @@ var wrapper=function wrapper(req, res, next){
     next();
 }
 
-process.env.DEBUG='connect:dispatcher';
+ process.env.DEBUG='jnode:*';
 
 /* setup connect */
 var connect=$('connect');

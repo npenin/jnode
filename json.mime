@@ -1,0 +1,14 @@
+
+//jsonp
+var jsonp=function(res, data){
+	res.end(req.query.callback+'('+JSON.stringify(data)+')', 'utf8');
+};
+japi.on('ret', 'jsonp', 'text/javascript');
+japi.register(jsonp, 'text/javascript', 'application/jsonp', 'applicaiton/x-javascript', 'text/x-jsonp');
+
+//json
+var json=function(res, data){
+	res.end(JSON.stringify(data), 'utf8');
+};
+japi.on('ret', 'json', 'application/json');
+japi.register(json, 'application/json', 'text/x-json');
