@@ -1,12 +1,13 @@
 var jnodeFolder=__dirname+'/';
 var cwd=process.cwd()+'/'
 window={};
+var debug=require('debug')('jnode:core');
 require('vm').runInThisContext(require('fs').readFileSync(jnodeFolder+'jquery-core.js'), 'jquery-core.js');
 var context;
 var register=function(verb, path)
 {
 	return function(route){
-		console.log('registering route '+verb+' '+route);
+		debug('registering route '+verb+' '+route);
 		if($.isArray(route))
 		{
 			$.each(route, function(){
@@ -37,7 +38,8 @@ global.$=function(moduleName){
 			head:register('head', moduleName),
 			del:register('del', moduleName),
 			options:register('options', moduleName),
-			all:register('all', moduleName)
+			all:register('all', moduleName),
+			on:function(verb){ return register(verb,moduleName); }
 		};
 	}
 };

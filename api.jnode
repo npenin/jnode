@@ -1,1 +1,147 @@
-require('./nquery.jnode')
+var shell=require('child_process');
+var debug=require('debug')('jnode:core');
+var options={simpleRun:true};
+process.env.DEBUG='jnode:*';
+var key=false;
+
+process.argv.forEach(function(arg, index){ 
+	if(index<2)
+		return;
+	options.simpleRun=false;
+	if(!key)
+	{
+		switch(arg)
+		{
+		case 'monitor':
+			options.monitor={folders:'.', extensions:['\\.jnode', '\\.js', 'jnode\\.config', '\\.json']};
+			break;
+		case 'forever':
+			options.forever=true;
+			break;
+		default:
+			key=arg;
+			break;
+		}
+	}
+	else
+	{
+		switch(key)
+		{
+			case '--ext':
+			case '-e':
+				options.monitor.extensions.push(arg);
+				break;
+			case '--folder':
+			case '-f':
+				options.monitor.folders+=' "'+arg.replace('"', '\\"')+'"';
+				break;
+			default:
+				console.log(key+' not handled');
+				process.exit();
+				break;
+		}
+		key=false;
+	}
+});
+
+var lastChangedDate=new Date();
+
+function monitor(callback)
+{
+	var date='';
+	switch(lastChangedDate.getMonth())
+	{
+		case 0:
+			date='Jan';
+			break;
+		case 1:
+			date='Feb';
+			break;
+		case 2:
+			date='Mar';
+			break;
+		case 3:
+			date='Apr';
+			break;
+		case 4:
+			date='May';
+			break;
+		case 5:
+			date='Jun';
+			break;
+		case 6:
+			date='Jul';
+			break;
+		case 7:
+			date='Aug';
+			break;
+		case 8:
+			date='Sep';
+			break;
+		case 9:
+			date='Oct';
+			break;
+		case 10:
+			date='Nov';
+			break;
+		case 11:
+			date='Dec';
+			break;
+	}
+
+	date+=' '+lastChangedDate.getDate()+' ';
+	if(lastChangedDate.getHours()<10)
+		date+='0'
+	date+=lastChangedDate.getHours()+':';
+	if(lastChangedDate.getMinutes()<11)
+		date+='0'
+	date+=(lastChangedDate.getMinutes()-1);
+	shell.exec("ls -lt "+options.monitor.folders+" | sed 's/ \\+/ /g' | grep -e \""+date+"\" | cut -f 6- -s -d ' ' | sed -n -e '/\\("+options.monitor.extensions.join('\\)\\|\\(')+"\\)/p' | wc -l", function(error, stdout, stderr){ 
+		lastChangedDate=new Date();
+		return callback(Boolean(Number(stdout)));
+	});
+}
+
+if(options.forever)
+{
+	console.log('forking ' + process.argv[1]);
+	var args=process.argv.slice(2,process.argv.length);
+	require('./setup.js');
+	args=$.grep(args, function(item, index) { return item!='forever'; });
+	var cp=shell.fork(process.argv[1], args, {cwd: process.cwd(), env:process.env, stdio:'ignore', detached:true});
+	console.log('forked');
+	cp.disconnect();
+}
+else
+if(options.monitor)
+{
+	console.log('forking ' + process.argv[1]);
+	var cp;
+	var start=function(preventStart){ 
+		if(!preventStart)
+		{
+			cp=shell.fork(process.argv[1], [], {cwd: process.cwd(), env:process.env, stdio:'inherit'});
+			cp.on('exit', start);
+			return cp;
+		}
+	}
+	cp=start();
+	
+	console.log('forked');
+	setInterval(function(){
+		monitor(function(changed){ 
+			if(changed)
+			{
+				console.log('restarting '+process.argv[1]);
+				cp.disconnect();
+				cp.kill();
+				cp=start();
+			}
+			else
+				console.log('nothing has changed');
+		});
+	}, 60000)
+}
+
+if(options.simpleRun)
+	require('./nquery.jnode')

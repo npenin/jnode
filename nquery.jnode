@@ -2,7 +2,7 @@ var jnodeFolder=__dirname+'/';
 var cwd=process.cwd()+'/'
 require('./setup.js');
 var accept=require('accept/index.js');
-
+var debug=require('debug')('jnode:core');
 global.japi=function(req,res)
 {
     return function(data)
@@ -16,7 +16,7 @@ global.japi=function(req,res)
 			}
 		}
 
-		var contentType=accept(req.headers.accept, ['application/json']);
+		var contentType=accept(req.headers.accept, ['application/json', 'text/html']);
 		
 		return japi.contentTypes[contentType](req,res,data);
     }
@@ -58,11 +58,12 @@ japi.register=function (handler)
 }
 
 require('./json.mime');
+require('./html.mime');
 
 var wrapper=function wrapper(req, res, next){
     $.extend(req, $('url').parse(req.url, true));
     res.send=japi(req,res);
-	console.log(req.url);
+	debug(req.url);
     next();
 }
 
@@ -85,16 +86,16 @@ $.extend($, {ajax:$('http').request});
 rootjQuery.ready=$.ready;
 exports.run=function(host, port){
 	if(typeof(server)!='undefined')
-		return console.log('server already running');
+		return debug('server already running');
 	global.server=$('http').createServer(app);
-	server.on('clientError', function(e){ console.log(e.message);});
-	server.on('connection', function(socket){ socket.on('error', function(e){ console.log(e.message); }); });
+	server.on('clientError', function(e){ debug(e.message);});
+	server.on('connection', function(socket){ socket.on('error', function(e){ debug(e.message); }); });
 
 	server.on('error', function(e) {
-		console.log('problem with request: ' + e.message);
+		debug('problem with request: ' + e.message);
 	});
 	server.listen(port, host);
-	console.log('Server running at http://'+host+':'+port+'/');
+	debug('Server running at http://'+host+':'+port+'/');
 }
 exports.init=function(config)
 {
@@ -105,7 +106,7 @@ exports.init=function(config)
 	for(var staticFolder in config["static"])
 	{
 		$.use(config["static"][staticFolder], connect.static(cwd+staticFolder));
-		console.log('registered static handler for '+cwd+staticFolder+' at '+config["static"][staticFolder]);
+		debug('registered static handler for '+cwd+staticFolder+' at '+config["static"][staticFolder]);
 	}
 	app.use(wrapper);
 	app.use(router);
@@ -118,7 +119,7 @@ if($('fs').existsSync(jnodeConfig))
 	var config=JSON.parse($('fs').readFileSync(jnodeConfig));
 	for(var key in config)
 	{
-		console.log('initializing '+key);
+		debug('initializing '+key);
 		if(key.substring(0,2)!='./')
 			context={request:{url:{pathname:key}}};
 		else
@@ -131,7 +132,7 @@ if($('fs').existsSync(jnodeConfig))
 			init=$(key).init;
 		if(init)
 			init(config[key]);
-		console.log('initialized '+key);
+		debug('initialized '+key);
 	}
 	context=null;
 }
