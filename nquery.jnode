@@ -5,8 +5,18 @@ var accept=require('accept/index.js');
 var debug=require('debug')('jnode:core');
 global.japi=function(req,res)
 {
-    return function(data)
+    return function(statusCode, data)
     {
+		if(isNaN(statusCode))
+		{
+			data=statusCode;
+			statusCode=200;
+		}
+		if(typeof(data)=='undefined')
+		{
+			res.statusCode=statusCode;
+			return res.end();
+		}
 		var contentType;
 		for(var key in japi.keys)
 		{
@@ -31,7 +41,6 @@ japi.on=function(key,value,contentType)
 
 japi.register=function (handler)
 {
-
 	for(var i=1;i<arguments.length; i++)
 	{
 		if(typeof(japi.contentTypes)=='undefined')
@@ -63,25 +72,74 @@ require('./html.mime');
 var wrapper=function wrapper(req, res, next){
     $.extend(req, $('url').parse(req.url, true));
     res.send=japi(req,res);
+	res.redirect=function(url){
+	    this.statusCode=302;
+	    this.setHeader('Location', url);
+		this.end();
+	};
+	res.cookie = function(name, val, options){
+		res._cookie=res._cookie || [];
+		options = $.extend({}, options);
+		var secret = this.req.secret;
+		var signed = options.signed;
+		if (signed && !secret) 
+			throw new Error('connect.cookieParser("secret") required for signed cookies');
+		if ('object' == typeof val) val = 'j:' + JSON.stringify(val);
+		if (signed) val = 's:' + sign(val, secret);
+		if ('maxAge' in options) 
+		{
+			options.expires = new Date(Date.now() + options.maxAge);
+			options.maxAge /= 1000;
+		}
+		if (null == options.path) 
+			options.path = '/';
+		
+		res._cookie.push($('cookie').serialize(name, String(val), options));
+		this.setHeader('Set-Cookie',res._cookie);
+		return this;
+	};
 	debug(req.url);
     next();
 }
 
- process.env.DEBUG='jnode:*';
+ process.env.DEBUG='jnode:*,domojs:*';
 
 /* setup connect */
 var connect=$('connect');
 var app=connect();
 app.use(connect.logger('dev'));
+app.use(connect.cookieParser());
+app.use(connect.session({secret:'domojs'}));
+app.use(wrapper);
+
 $.extend($, app);
 
 /* setup router */
-var router=$('router')();
+var router= new ($('router'))();
+
+$.rules={};
+
+router.onmount=function(method, pattern, rewrite, fn)
+{
+	if(typeof($.rules[method]) =='undefined')
+		$.rules[method]=[];
+
+	$.rules[method].push({
+		pattern:pattern,
+		rewrite:rewrite
+	});
+}
 $.extend($, router);
 
-$.get('/', '/index.html');
+var getRegistration=$.get;
+$.get=function(arg1,arg2){
+	if(arguments.length==2 && arg2.length==1)
+		return $.ajax({type:'GET',url:arg1, success:arg2});
+	else
+		return getRegistration.apply(this, arguments);
+};
 
-$.extend($, {ajax:$('http').request});
+$.get('/', '/index.html');
 
 rootjQuery.ready=$.ready;
 exports.run=function(host, port){
@@ -97,7 +155,7 @@ exports.run=function(host, port){
 	server.listen(port, host);
 	debug('Server running at http://'+host+':'+port+'/');
 }
-exports.init=function(config)
+exports.init=function(config,app)
 {
 	for(var route in config.routes)
 	{
@@ -108,7 +166,7 @@ exports.init=function(config)
 		$.use(config["static"][staticFolder], connect.static(cwd+staticFolder));
 		debug('registered static handler for '+cwd+staticFolder+' at '+config["static"][staticFolder]);
 	}
-	app.use(wrapper);
+	
 	app.use(router);
 	exports.run(config.host, config.port);
 }
@@ -131,7 +189,7 @@ if($('fs').existsSync(jnodeConfig))
 		else
 			init=$(key).init;
 		if(init)
-			init(config[key]);
+			init(config[key], app);
 		debug('initialized '+key);
 	}
 	context=null;

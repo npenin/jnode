@@ -1,7 +1,8 @@
+process.env.DEBUG='jnode:*,domojs:*';
+process.env.DEBUG_COLORS=true;
 var shell=require('child_process');
 var debug=require('debug')('jnode:core');
 var options={simpleRun:true};
-process.env.DEBUG='jnode:*';
 var key=false;
 
 process.argv.forEach(function(arg, index){ 

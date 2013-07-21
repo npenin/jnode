@@ -1,0 +1,18 @@
+
+//html
+var html=function(res, data){
+	if(typeof(data)=='string')
+		res.end(data, 'utf8');
+	else
+		res.end(JSON.stringify(data)
+			.replace(new RegExp(',', 'g'), ',</li><li>')
+			.replace(new RegExp('\\{', 'g'), '{<ul><li>')
+			.replace(new RegExp('\\[', 'g'), '[<ul><li>')
+			.replace(new RegExp('\\]', 'g'), '</li></ul>]')
+			.replace(new RegExp('\\}', 'g'), '</li></ul>}')
+			.replace(new RegExp('<li></li>', 'g'),'')
+			.replace(new RegExp('<ul></ul>', 'g'),''), 'utf8');
+};
+
+japi.on('ret', 'html', 'text/html');
+japi.register(html, 'text/html');
