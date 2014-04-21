@@ -1,80 +1,118 @@
-(function(){
-	var debug=$('debug')('jnode:ajax');
+(function ()
+{
+    var debug = $('debug')('jnode:ajax');
 
-	$.extend($, {ajax:function(url, settings){
-	if(typeof(settings)=='undefined')
-		settings={};
-	if(typeof(url)=='string')
-		$.extend(settings, {url: url});
-	else
-		settings=url;
-	
-	url=$('url').parse(settings.url, true);
+    $.extend($, { ajax: function (url, settings)
+    {
+        if (typeof (settings) == 'undefined')
+            settings = {};
+        if (typeof (url) == 'string')
+            $.extend(settings, { url: url });
+        else
+            settings = url;
 
-	var nodeOptions={
-		hostname:url.hostname,
-		port:url.port,
-		method:settings.type || settings.data && 'POST' || 'GET',
-		headers:settings.headers,
-		path:url.pathname
-	};
-	
-	if(nodeOptions.method=='GET' && settings.data)
-	{
-		if(url.search && url.search.length>1)
+        url = $('url').parse(settings.url, true);
+		
+		if(!settings.headers)
+			settings.headers={};
+		if(!settings.headers.accept)
 		{
-			if(settings.data instanceof string)
-				settings.data=$('querystring').parse(settings.data);
+			switch(settings.dataType)
+			{
+				case 'json':
+					settings.headers.accept='application/json';
+					break;
+				case 'xml':
+					settings.headers.accept='application/xml';
+					break;
+			}
 		}
-		else
-			url.query={}
-		$.extend(url.query, settings.data);
-	}
-	if(url.search)
-		nodeOptions.path=nodeOptions.path+'?'+$('querystring').stringify(url.query);
 
-	debug($('util').inspect(nodeOptions));
-	var request=$('http').request(nodeOptions, function(res) {
-		if($.isFunction(settings.error))
-			res.on('error', settings.error);
-		
-		var data='';
-		
-		if(!settings.dataType && res.headers.contentType && res.headers.contentType.startsWith('application/json'))
-			settings.dataType='json';
-			
-		res.setEncoding('utf8');
-		
-		res.on('data', function(d){
-			data+=d;
-		});
-		
-		res.on('end', function(){
-			if(settings.dataType=='json')
-				data=JSON.parse(data.replace(/,[ \r\n]*\}/g, '}'));
+        var nodeOptions = {
+            hostname: url.hostname,
+            port: url.port,
+            method: settings.type || settings.data && 'POST' || 'GET',
+            headers: settings.headers,
+            path: url.pathname
+        };
 
-			if(settings.dataType=='jsonp')
-				eval(data);
-			else
-				settings.success(data);
-		});
-	});
-	
-	if($.isFunction(settings.error))
-		request.on('error', settings.error);
-	
-	if(settings.data && nodeOptions.method!='GET')
-	{
-		if($.isPlainObject(settings.data))
-			request.write(JSON.stringify(settings.data));
-		else
-			request.write(settings.data);	
+        if (nodeOptions.method == 'GET' && settings.data)
+        {
+            if (url.search && url.search.length > 1)
+            {
+                if (settings.data instanceof string)
+                    settings.data = $('querystring').parse(settings.data);
+            }
+            else
+                url.query = {}
+            $.extend(url.query, settings.data);
+        }
+        if (url.search)
+            nodeOptions.path = nodeOptions.path + '?' + $('querystring').stringify(url.query);
+
+        debug($('util').inspect(nodeOptions));
+		var request=$('http').request(nodeOptions);
+		if(settings.success)
+			request.on('response', function (res)
+        {
+            if ($.isFunction(settings.error))
+                res.on('error', settings.error);
+
+            var data = '';
+
+            if (!settings.dataType && res.headers.contentType && res.headers.contentType.startsWith('application/json'))
+                settings.dataType = 'json';
+
+			res.setEncoding('utf8');
+
+			res.on('data', function (d)
+			{
+				data += d;
+			});
+
+			res.on('end', function ()
+			{
+				if (res.statusCode==200 && settings.dataType=='json' || res.headers['content-type'].startsWith('application/json'))
+					data = JSON.parse(data.replace(/,[ \r\n]*\}/g, '}'));
+
+				if (res.statusCode==200 && settings.dataType == 'xml' || res.headers['content-type'].startsWith('application/xml'))
+					$('xml2js').parseString(data, function(error, result){ 
+						if(error) 
+							settings.error(error); 
+						else 
+							settings.success(result);
+					});
+				else if(res.statusCode==200)
+				{
+					if (settings.dataType == 'jsonp')
+						eval(data);
+					else
+						settings.success(data);
+				}
+				else if(settings.error)
+					settings.error(data, res.statusCode, res);
+			});
+        });
+
+        if ($.isFunction(settings.error))
+            request.on('error', settings.error);
+
+        if (settings.data && nodeOptions.method != 'GET')
+        {
+            if ($.isPlainObject(settings.data))
+                request.write(JSON.stringify(settings.data));
+            else
+                request.write(settings.data);
+
+        }
 		
-	}
-	
-	request.end();
-},
-getJSON:function(url, success){
-	return $.ajax({type:'GET', url:url, dataType:'json', success:success});
-}});
+        request.end();
+
+        return request;
+    },
+        getJSON: function (url, success)
+        {
+            return $.ajax({ type: 'GET', url: url, dataType: 'json', success: success });
+        } 
+    });
 })();

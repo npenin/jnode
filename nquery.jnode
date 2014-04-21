@@ -12,9 +12,9 @@ global.japi=function(req,res)
 			data=statusCode;
 			statusCode=200;
 		}
+		res.statusCode=statusCode;
 		if(typeof(data)=='undefined')
 		{
-			res.statusCode=statusCode;
 			return res.end();
 		}
 		var contentType;
@@ -26,7 +26,11 @@ global.japi=function(req,res)
 			}
 		}
 
-		var contentType=accept(req.headers.accept, ['application/json', 'text/html']);
+		var preferred='text/html';
+		if(req.headers['content-type']=='application/json' || req.headers['content-type']=='text/json')
+			preferred='application/json';
+		
+		var contentType=accept(req.headers.accept, ['application/json', 'text/html'], preferred);
 		
 		return japi.contentTypes[contentType](req,res,data);
     }
@@ -102,12 +106,13 @@ var wrapper=function wrapper(req, res, next){
     next();
 }
 
- process.env.DEBUG='jnode:*,domojs:*';
+//process.env.DEBUG='jnode:*,domojs:*';
 
 /* setup connect */
 var connect=$('connect');
 var app=connect();
-app.use(connect.logger('dev'));
+if(process.env.NODE_ENV!='production')
+	app.use(connect.logger());
 app.use(connect.cookieParser());
 app.use(connect.session({secret:'domojs'}));
 app.use(wrapper);
@@ -139,7 +144,6 @@ $.get=function(arg1,arg2){
 		return getRegistration.apply(this, arguments);
 };
 
-$.get('/', '/index.html');
 
 rootjQuery.ready=$.ready;
 exports.run=function(host, port){
@@ -157,6 +161,9 @@ exports.run=function(host, port){
 }
 exports.init=function(config,app)
 {
+	if(config.useDefaultDocument!==false)
+		$.get('/', '/index.html');
+
 	for(var route in config.routes)
 	{
 		$.get(route, config.routes[route]);
@@ -168,7 +175,10 @@ exports.init=function(config,app)
 	}
 	
 	app.use(router);
-	exports.run(config.host, config.port);
+    if(!isNaN(config.port))
+	    exports.run(config.host, config.port);
+    else
+        exports.run(config.host, process.env.PORT);
 }
 
 var jnodeConfig=cwd+'jnode.config';
