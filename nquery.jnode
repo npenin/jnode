@@ -27,8 +27,9 @@ global.japi=function(req,res)
 		}
 
 		var preferred='text/html';
-		if(req.headers['content-type']=='application/json' || req.headers['content-type']=='text/json')
+		if(req.headers['content-type']=='application/json' || req.headers['content-type']=='text/json' || typeof(data)!='string')
 			preferred='application/json';
+			
 		
 		var contentType=accept(req.headers.accept, ['application/json', 'text/html'], preferred);
 		
@@ -112,7 +113,7 @@ var wrapper=function wrapper(req, res, next){
 var connect=$('connect');
 var app=connect();
 if(process.env.NODE_ENV!='production')
-	app.use(connect.logger());
+	app.use(connect.logger(process.env.NODE_ENV || 'dev'));
 app.use(connect.cookieParser());
 app.use(connect.session({secret:'domojs'}));
 app.use(wrapper);
