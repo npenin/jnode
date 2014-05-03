@@ -50,6 +50,22 @@
         if (url.search)
             nodeOptions.path = nodeOptions.path + '?' + $('querystring').stringify(url.query);
 
+		if (settings.data && nodeOptions.method != 'GET')
+        {
+            if ($.isPlainObject(settings.data))
+                settings.data=JSON.stringify(settings.data);
+			settings.headers['content-length']=settings.data.length;
+			switch(settings.dataType)
+			{
+				case 'json':
+					settings.headers['content-type']='application/json';
+					break;
+				case 'xml':
+					settings.headers['content-type']='text/xml';
+					break;
+			}
+		}
+			
         debug($('util').inspect(nodeOptions));
 		var request=$('http').request(nodeOptions);
 		if(settings.success)
@@ -73,8 +89,18 @@
 			res.on('end', function ()
 			{
 				if (res.statusCode==200 && settings.dataType=='json' || res.headers['content-type'].startsWith('application/json'))
-					data = JSON.parse(data.replace(/,[ \r\n]*\}/g, '}'));
-
+				{
+					try
+					{
+						data = JSON.parse(data.replace(/,[ \r\n]*\}/g, '}'));
+					}
+					catch(error)
+					{
+						console.log(error);
+						console.log(data);	
+					}
+				}
+				
 				if (res.statusCode==200 && settings.dataType == 'xml' || res.headers['content-type'].startsWith('application/xml'))
 					$('xml2js').parseString(data, function(error, result){ 
 						if(error) 
@@ -96,17 +122,16 @@
 
         if ($.isFunction(settings.error))
             request.on('error', settings.error);
-
-        if (settings.data && nodeOptions.method != 'GET')
-        {
-            if ($.isPlainObject(settings.data))
-                request.write(JSON.stringify(settings.data));
-            else
-                request.write(settings.data);
-
+        
+		if (settings.data && nodeOptions.method != 'GET')
+		{
+			debug(settings.data);
+			request.write(settings.data);
         }
-		
-        request.end();
+
+		process.nextTick(function(){
+			request.end();
+		});
 
         return request;
     },
