@@ -2,7 +2,8 @@ var jnodeFolder=__dirname+'/';
 var cwd=process.cwd()+'/'
 window={};
 var debug=require('debug')('jnode:core');
-require('vm').runInThisContext(require('fs').readFileSync(jnodeFolder+'jquery-core.js'), 'jquery-core.js');
+var vm=require('vm');
+vm.runInThisContext(require('fs').readFileSync(jnodeFolder+'jquery-core.js'), 'jquery-core.js');
 var context;
 var register=function(verb, path)
 {
@@ -74,3 +75,14 @@ String.prototype.trim=function(chars)
 }
 
 $(jnodeFolder+'jquery-ajax-wrapper.js');
+
+$.eachAsync=function(array, body, completed)
+{
+	(function step(index)
+	{
+		if(index<array.length)
+			body(index, array[index], function(){ step(index+1) });
+		else if(completed)
+			completed(array);
+	})(0);
+}

@@ -7,7 +7,7 @@ global.japi=function(req,res)
 {
     return function(statusCode, data)
     {
-		if(isNaN(statusCode))
+		if(isNaN(statusCode) || Math.floor(statusCode)!=statusCode)
 		{
 			data=statusCode;
 			statusCode=200;
@@ -85,7 +85,7 @@ var wrapper=function wrapper(req, res, next){
 	res.cookie = function(name, val, options){
 		res._cookie=res._cookie || [];
 		options = $.extend({}, options);
-		var secret = this.req.secret;
+		var secret = req.secret;
 		var signed = options.signed;
 		if (signed && !secret) 
 			throw new Error('connect.cookieParser("secret") required for signed cookies');
@@ -112,10 +112,10 @@ var wrapper=function wrapper(req, res, next){
 /* setup connect */
 var connect=$('connect');
 var app=connect();
-if(process.env.NODE_ENV!='production')
-	app.use(connect.logger(process.env.NODE_ENV || 'dev'));
-app.use(connect.cookieParser());
-app.use(connect.session({secret:'domojs'}));
+// if(process.env.NODE_ENV!='production')
+	// app.use($('connect-logger')(process.env.NODE_ENV || 'dev'));
+app.use($('cookie-parser')());
+app.use($('cookie-session')({secret:'domojs'}));
 app.use(wrapper);
 
 $.extend($, app);
@@ -150,14 +150,27 @@ rootjQuery.ready=$.ready;
 exports.run=function(host, port){
 	if(typeof(server)!='undefined')
 		return debug('server already running');
-	global.server=$('http').createServer(app);
+    global.server=$('http').createServer(app);
+    global.protocol='http';
+    global.port=server.port=port;
+	if($('fs').existsSync('cert.pfx'))
+	{
+	    server.listen(port, '127.0.0.1');
+	    global.server=$('https').createServer({pfx:$('fs').readFileSync('cert.pfx'), passphrase:'hRrnhUUZ79VyIFa23XA6'}, app);
+	    global.protocol='https';
+		server.port=443;
+	    server.listen(443, host);
+	    debug('Server running at https://'+host+'/');
+	}
+	else
+	    server.listen(port, host);
 	server.on('clientError', function(e){ debug(e.message);});
 	server.on('connection', function(socket){ socket.on('error', function(e){ debug(e.message); }); });
 
 	server.on('error', function(e) {
 		debug('problem with request: ' + e.message);
 	});
-	server.listen(port, host);
+	server.host=host;
 	debug('Server running at http://'+host+':'+port+'/');
 }
 exports.init=function(config,app)
