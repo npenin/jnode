@@ -12,13 +12,7 @@
   },
   "author": "Nicolas Penin <nicolas.penin@dragon-angel.fr>",
   "dependencies": {
-    "gpio": "~0.1.0",
-    "mdns": "~0.0.7",
-    "mongoose": "~2.7.2",
-    "libxmljs": "~0.6.0"
-  },
-  "devDependencies": {
-	"jnode-blaster": "~0.0.1"
+    "connect": "latest"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

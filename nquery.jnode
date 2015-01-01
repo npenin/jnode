@@ -156,6 +156,7 @@ exports.run=function(host, port){
 	if($('fs').existsSync('cert.pfx'))
 	{
 	    server.listen(port, '127.0.0.1');
+	    global.localServer=global.server;
 	    global.server=$('https').createServer({pfx:$('fs').readFileSync('cert.pfx'), passphrase:'hRrnhUUZ79VyIFa23XA6'}, app);
 	    global.protocol='https';
 		server.port=443;
@@ -188,7 +189,6 @@ exports.init=function(config,app)
 		debug('registered static handler for '+cwd+staticFolder+' at '+config["static"][staticFolder]);
 	}
 	
-	app.use(router);
     if(!isNaN(config.port))
 	    exports.run(config.host, config.port);
     else
@@ -218,6 +218,9 @@ if($('fs').existsSync(jnodeConfig))
 	}
 	context=null;
 }
+
+app.use(router);
+
 
 if(require.main===module)
 {
