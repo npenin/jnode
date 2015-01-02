@@ -1,7 +1,7 @@
 var jnodeFolder=__dirname+'/';
 var cwd=process.cwd()+'/'
 require('./setup.js');
-var accept=require('accept/index.js');
+var accept=require('accept');
 var debug=require('debug')('jnode:core');
 global.japi=function(req,res)
 {
