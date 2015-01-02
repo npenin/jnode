@@ -1,6 +1,6 @@
 {
   "name": "jnode",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "write less, do more nodejs",
   "main": "./api.jnode",
   "bugs": {
