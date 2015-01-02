@@ -18,7 +18,7 @@
 	"cookie":"latest",
 	"cookie-parser":"latest",
 	"cookie-session":"latest",
-	"router":"latest",
+	"router":"latest"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
