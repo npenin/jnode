@@ -147,17 +147,19 @@ $.get=function(arg1,arg2){
 
 
 rootjQuery.ready=$.ready;
-exports.run=function(host, port){
+exports.run=function(host, port, httpsOptions){
 	if(typeof(server)!='undefined')
 		return debug('server already running');
     global.server=$('http').createServer(app);
     global.protocol='http';
     global.port=server.port=port;
-	if($('fs').existsSync('cert.pfx'))
+	if(httpsOptions)
 	{
 	    server.listen(port, '127.0.0.1');
 	    global.localServer=global.server;
-	    global.server=$('https').createServer({pfx:$('fs').readFileSync('cert.pfx'), passphrase:'hRrnhUUZ79VyIFa23XA6'}, app);
+	    if(httpsOptions.pfx)
+	        httpsOptions.pfx=$('fs').readFileSync(httpsOptions.pfx);
+	    global.server=$('https').createServer(httpsOptions, app);
 	    global.protocol='https';
 		server.port=443;
 	    server.listen(443, host);
@@ -190,9 +192,9 @@ exports.init=function(config,app)
 	}
 	
     if(!isNaN(config.port))
-	    exports.run(config.host, config.port);
+	    exports.run(config.host, config.port, config.https);
     else
-        exports.run(config.host, process.env.PORT);
+        exports.run(config.host, process.env.PORT, config.https);
 }
 
 var jnodeConfig=cwd+'jnode.config';
