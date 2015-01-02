@@ -12,7 +12,8 @@
   },
   "author": "Nicolas Penin <nicolas.penin@dragon-angel.fr>",
   "dependencies": {
-    "connect": "latest"
+    "connect": "latest",
+	"npenin/node-accept":"latest"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
