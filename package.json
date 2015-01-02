@@ -13,7 +13,7 @@
   "author": "Nicolas Penin <nicolas.penin@dragon-angel.fr>",
   "dependencies": {
     "connect": "latest",
-	"npenin/node-accept":"latest"
+	"accept":"npenin/node-accept"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
