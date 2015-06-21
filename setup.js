@@ -47,6 +47,21 @@ global.$=function(moduleName){
 
 jQuery.extend($, jQuery);
 
+$.service=function(file, cwd, args, callback){
+	if($.isFunction(args))
+	{
+		callback=args;
+		args=[];
+	}
+	var cp=$('child_process').fork(file, args, {cwd: cwd, env:process.env});
+	callback(cp);
+        console.log('forked');
+        cp.on('exit', function(){
+            cp=$('child_process').fork(file, args, {cwd:cwd, env:process.env});
+	    callback(cp);
+        });
+}
+
 String.prototype.endsWith=function(s)
 {
 	return this.substring(this.length-s.length)==s;

@@ -40,7 +40,7 @@
         var nodeOptions = {
             hostname: url.hostname,
             port: url.port,
-            method: settings.type || settings.data && 'POST' || 'GET',
+            method: settings.type && settings.type.toUpperCase() || settings.data && 'POST' || 'GET',
             headers: settings.headers,
             path: url.pathname
         };
@@ -48,18 +48,17 @@
         if(url.auth)
             nodeOptions.auth=url.auth;
 
+        debug(nodeOptions.method);
+        debug(url.query);
         if (nodeOptions.method == 'GET' && settings.data)
         {
-            if (url.search && url.search.length > 1)
-            {
-                if (settings.data instanceof string)
-                    settings.data = $('querystring').parse(settings.data);
-            }
-            else
-                url.query = {}
+            if (settings.data instanceof String)
+                settings.data = $('querystring').parse(settings.data);
+            if(!url.query)
+                url.query = {};
             $.extend(url.query, settings.data);
         }
-        if (url.search)
+        if (url.query && Object.keys(url.query).length>0)
             nodeOptions.path = nodeOptions.path + '?' + $('querystring').stringify(url.query);
 
         if(url.protocol && url.protocol.endsWith(':'))
