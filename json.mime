@@ -8,7 +8,7 @@ japi.register(jsonp, 'text/javascript', 'application/jsonp', 'applicaiton/x-java
 
 //json
 var json=function(res, data){
-	res.end(JSON.stringify(data), 'utf8');
+	res.end(JSON.stringify(data, 4), 'utf8');
 };
 japi.on('ret', 'json', 'application/json');
 japi.register(json, 'application/json', 'text/x-json');

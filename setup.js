@@ -21,6 +21,15 @@ var register=function(verb, path)
 	}
 }
 
+String.prototype.startsWith=function(str){
+    return this.substr(0, Math.min(this.length, str.length))==str;
+}
+
+String.prototype.endsWith=function(str){
+    var length=Math.min(this.length, str.length);
+    return this.substr(this.length-length)==str;
+}
+
 global.$=function(moduleName){
 	if(typeof(moduleName)==='string')
 	{
@@ -46,6 +55,8 @@ global.$=function(moduleName){
 };
 
 jQuery.extend($, jQuery);
+var stop=false;
+var subProcesses={};
 
 $.service=function(file, cwd, args, callback){
 	if($.isFunction(args))
@@ -54,13 +65,25 @@ $.service=function(file, cwd, args, callback){
 		args=[];
 	}
 	var cp=$('child_process').fork(file, args, {cwd: cwd, env:process.env});
-	callback(cp);
-        console.log('forked');
-        cp.on('exit', function(){
-            cp=$('child_process').fork(file, args, {cwd:cwd, env:process.env});
+	subProcesses[cp.pid]=true;
+	if(callback)
 	    callback(cp);
-        });
+    console.log('forked');
+    cp.on('exit', function(){
+        if(stop)
+            return;
+        delete subProcesses[cp.pid];
+        $.service(file, cwd, args, callback);
+    });
 }
+
+
+process.on('SIGINT', function(){
+    stop=true;
+    for(var i=0;i<subProcesses.length;i++)
+        process.kill(subProcesses[i], 'SIGINT');
+    process.exit();
+})
 
 String.prototype.endsWith=function(s)
 {
@@ -93,6 +116,15 @@ $(jnodeFolder+'jquery-ajax-wrapper.js');
 
 $.eachAsync=function(array, body, completed)
 {
+    if(!$.isArray(array))
+    {
+        $.eachAsync(Object.keys(array), function(i, key, next){
+            body(key, array[key], next);
+        }, function(){
+            if(completed)
+                completed(array);
+        })
+    }
 	(function step(index)
 	{
 		if(index<array.length)

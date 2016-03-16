@@ -5,6 +5,10 @@ var debug=require('debug')('jnode:core');
 var options={simpleRun:true};
 var key=false;
 
+process.on('uncaughtException', (err) => {
+  console.log(`Caught exception: ${err}`);
+});
+
 process.argv.forEach(function(arg, index){ 
 	if(index<2)
 		return;
@@ -109,11 +113,10 @@ if(options.forever)
 	var args=process.argv.slice(2,process.argv.length);
 	require('./setup.js');
 	args=$.grep(args, function(item, index) { return item!='forever'; });
-	var cp=shell.fork(process.argv[1], args, {cwd: process.cwd(), env:process.env});
-	console.log('forked');
-	cp.on('exit', function(){
-	    cp=shell.fork(process.argv[1], args, {cwd: process.cwd(), env:process.env});
-	});
+	$.service(process.argv[1], process.cwd(), args);
+	process.on('SIGHUP', function(){
+	    //do nothing
+	})
 }
 else
 if(options.monitor)

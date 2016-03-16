@@ -1,17 +1,25 @@
-
 //html
 var html=function(res, data){
-	if(typeof(data)=='string')
-		res.end(data, 'utf8');
-	else
-		res.end(JSON.stringify(data)
-			.replace(new RegExp(',', 'g'), ',</li><li>')
-			.replace(new RegExp('\\{', 'g'), '{<ul><li>')
-			.replace(new RegExp('\\[', 'g'), '[<ul><li>')
-			.replace(new RegExp('\\]', 'g'), '</li></ul>]')
-			.replace(new RegExp('\\}', 'g'), '</li></ul>}')
-			.replace(new RegExp('<li></li>', 'g'),'')
-			.replace(new RegExp('<ul></ul>', 'g'),''), 'utf8');
+    if(typeof(data)!='string')
+    {
+        data=JSON.stringify(data);
+        data=data
+                .replace(new RegExp(',', 'g'), ',</li><li>')
+                .replace(new RegExp('\\{', 'g'), '{<ul><li>')
+                .replace(new RegExp('\\[', 'g'), '[<ul><li>')
+                .replace(new RegExp('\\]', 'g'), '</li></ul>]')
+                .replace(new RegExp('\\}', 'g'), '</li></ul>}')
+                .replace(new RegExp('<li></li>', 'g'),'')
+                .replace(new RegExp('<ul></ul>', 'g'),'');
+        if(data)
+            res.end(data, 'utf8');	
+    }
+    else if(data)
+    {
+	    res.end(data, 'utf8');
+    }
+    else
+        res.end();
 };
 
 japi.on('ret', 'html', 'text/html');

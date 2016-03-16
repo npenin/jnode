@@ -45,6 +45,8 @@
             path: url.pathname
         };
         
+        if(settings.auth)
+            nodeOptions.auth=settings.auth;
         if(url.auth)
             nodeOptions.auth=url.auth;
 

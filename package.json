@@ -1,32 +1,79 @@
 {
-  "name": "jnode",
-  "version": "0.0.2",
-  "description": "write less, do more nodejs",
-  "main": "./api.jnode",
+  "_args": [
+    [
+      "jnode@github:npenin/jnode",
+      "/home/pi/domojs"
+    ]
+  ],
+  "_from": "npenin/jnode",
+  "_id": "jnode@0.0.2",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/jnode",
+  "_phantomChildren": {},
+  "_requested": {
+    "hosted": {
+      "directUrl": "https://raw.githubusercontent.com/npenin/jnode/master/package.json",
+      "gitUrl": "git://github.com/npenin/jnode.git",
+      "httpsUrl": "git+https://github.com/npenin/jnode.git",
+      "shortcut": "github:npenin/jnode",
+      "ssh": "git@github.com:npenin/jnode.git",
+      "sshUrl": "git+ssh://git@github.com/npenin/jnode.git",
+      "type": "github"
+    },
+    "name": "jnode",
+    "raw": "jnode@github:npenin/jnode",
+    "rawSpec": "github:npenin/jnode",
+    "scope": null,
+    "spec": "github:npenin/jnode",
+    "type": "hosted"
+  },
+  "_requiredBy": [
+    "/",
+    "/mvc"
+  ],
+  "_resolved": "git://github.com/npenin/jnode.git#cbc7891cbc3623c98faf77baeaf361489deb5610",
+  "_shasum": "0b44c0b501511de402170561382f0ac96681adb5",
+  "_shrinkwrap": null,
+  "_spec": "jnode@github:npenin/jnode",
+  "_where": "/home/pi/domojs",
+  "author": {
+    "email": "nicolas.penin@dragon-angel.fr",
+    "name": "Nicolas Penin"
+  },
   "bugs": {
     "url": "http://github.com/npenin/jnode/issues"
   },
+  "dependencies": {
+    "accept": "github:npenin/node-accept",
+    "connect": "latest",
+    "cookie": "latest",
+    "cookie-parser": "latest",
+    "cookie-session": "latest",
+    "debug": "latest",
+    "router": "github:npenin/router"
+  },
+  "description": "write less, do more nodejs",
+  "devDependencies": {},
+  "gitHead": "cbc7891cbc3623c98faf77baeaf361489deb5610",
+  "homepage": "https://github.com/npenin/jnode#readme",
+  "keywords": [
+    "api",
+    "jnode",
+    "jquery"
+  ],
+  "license": "MsPl",
+  "main": "./api.jnode",
+  "name": "jnode",
+  "optionalDependencies": {},
+  "readme": "jnode\n====\n\nnodejs api using jquery simplicity. \n\njnode uses the file core.js (c14a6b385fa419ce67f115e853fb4a89d8bd8fad) which is at https://github.com/jquery/jquery/blob/master/src/core.js.\n\njnode aims to be used by an http server. You may also use it without but you might have useless features\n\nWhat jnode brings :\n- an easy configuration of http server\n- a static file server\n- an api server (with the ability to handle automatic wrapping on result depending on content type expected by the client)\n- the $ function of jquery : you can load a module using the $ function or export an handler (discussed below)\n- the isFunction, isArray, ... of jquery\n- the extend, each, inArray, merge, grep, map,  function of jquery\n\nHow to get jnode\n====\n\n```bash\nnpm install jnode\n```\n\nHow to run jnode\n====\n```bash\nnode jnode\n```\n\nhow to configure jnode\n====\n```js\n{\n  \"./ir-blaster/blast.jnode\":{\"blaster\":\"192.168.68.23\"}, \n  \"jnode\":{\n    \"host\":\"192.168.68.11\",\n    \"port\":80, \n    \"routes\":\n    {\n      \"/api/blast/{dev}/{cmd}\":\"/blaster/blast.jnode\", \n      \"/api/jnode-admin/quit\":\"/quit.jnode\"\n    }\n  },\n  \"./mdns.jnode\":null, \n  \"./gpio-blaster/rts.jnode\":null \n}\n```\n\n\nHow to make an handler\n====\n\nA picture is worth a thousand words :\n\n```js\n$(function(req,res,japi){\njapi('Will be turned off when all the '+server.connections+' connection(s) will be closed');\nreq.connection.destroy();\nserver.close(function()\n{\n  console.log('Exiting');\n});\n});\n```\n\nAs you can see, the function passed to $ expects 3 arguments : the request, the response, and the japi.\n\njapi is a function built into jnode used to wrap the result of your handler. In the quit handler, a simple string is returned but it also could have been a JSON object. The JSON object would then have been wrapped by the callback if the expected result is jsonp.\n\nHow to make japi know which content type is expected\n====\nYou have 2 possibilities to make japi understand which content you expect : query string or HTTP Accept header.\n\nQuery String\n=====\nIf you want a to have json or jsonp in your response, you have to specify it in the ret query string parameter :\n\nhttp://192.168.68.11/quit.jnode?ret=json\n\nhttp://192.168.68.11/quit.jnode?ret=jsonp\n\nAccept header\n=====\nIf you have not specified the ret query string parameter, the accept header is used. Which is basically what jquery on client does change.\n\nHere are the allowed content types for json :\n  - text/javascript\n  - application/json\n  - application/x-javascript\n  - text/x-javascript\n  - text/x-json\n\nHere are the allowed content types for jsonp :\n  - application/jsonp\n  - text/x-jsonp",
+  "readmeFilename": "README.md",
   "repository": {
     "type": "git",
     "url": "git://github.com/npenin/jnode.git"
   },
-  "author": "Nicolas Penin <nicolas.penin@dragon-angel.fr>",
-  "dependencies": {
-    "connect": "latest",
-	"accept":"npenin/node-accept",
-	"debug":"latest",
-	"cookie":"latest",
-	"cookie-parser":"latest",
-	"cookie-session":"latest",
-	"router":"npenin/router"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-    "jnode",
-    "api",
-    "jquery"
-  ],
-  "license": "MsPl"
+  "version": "0.0.2"
 }

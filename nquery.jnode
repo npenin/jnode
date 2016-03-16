@@ -7,6 +7,11 @@ global.japi=function(req,res)
 {
     return function(statusCode, data)
     {
+        if(res.headersSent)
+        {
+            console.error('can not send request header twice', statusCode, data);
+            return;
+        }
 		if(isNaN(statusCode) || Math.floor(statusCode)!=statusCode)
 		{
 			data=statusCode;
