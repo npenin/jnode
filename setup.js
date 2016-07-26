@@ -4,6 +4,7 @@ window={};
 var debug=require('debug')('jnode:core');
 var vm=require('vm');
 vm.runInThisContext(require('fs').readFileSync(jnodeFolder+'jquery-core.js'), 'jquery-core.js');
+
 var context;
 var register=function(verb, path)
 {
@@ -68,7 +69,7 @@ $.service=function(file, cwd, args, callback){
 	subProcesses[cp.pid]=true;
 	if(callback)
 	    callback(cp);
-    console.log('forked');
+    debug('forked');
     cp.on('exit', function(){
         if(stop)
             return;
@@ -76,7 +77,61 @@ $.service=function(file, cwd, args, callback){
         $.service(file, cwd, args, callback);
     });
 }
+$.queue=function(processor, queue)
+{
+    if(!new.target)
+        return new ($.queue)(processor, queue);
 
+    var processing=false;
+    var filePath=queue;
+    if(typeof(queue)=='string')
+        queue=JSON.parse($('fs').readFileSync(queue));
+    else
+        filePath=null;
+    queue=this.pending=queue || [];
+    debug(queue);
+    var self=this;
+    this.enqueue=function(message){
+        debug(message);
+        queue.push(message);
+        self.save();
+        processQueue();
+    };
+    
+    this.save=function()
+    {
+        if(filePath)
+            $('fs').writeFile(filePath, JSON.stringify(queue), function(err){
+                if(err)
+                    debug(err);
+            });
+        
+    }
+    
+    var processQueue=this.process=function(){
+        if(processing)
+            return;
+        processing=true;
+        var message=queue.shift();
+        self.current=message;
+        if(!message)
+            return processing=false;
+        processor(message, function(processed){ 
+            if(processed===false)
+            {
+                self.enqueue(message);
+            }
+            self.save(); 
+            processing=false; 
+            if(processed!==false)
+                process.nextTick(processQueue);
+            
+        });
+    };
+
+    if(queue.length>0)
+        processQueue();
+};
 
 process.on('SIGINT', function(){
     stop=true;

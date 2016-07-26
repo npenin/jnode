@@ -12,7 +12,7 @@ global.japi=function(req,res)
             console.error('can not send request header twice', statusCode, data);
             return;
         }
-		if(isNaN(statusCode) || Math.floor(statusCode)!=statusCode)
+		if(isNaN(statusCode) || Math.floor(statusCode)!=statusCode || statusCode<100)
 		{
 			data=statusCode;
 			statusCode=200;
@@ -209,11 +209,7 @@ if($('fs').existsSync(jnodeConfig))
 	for(var key in config)
 	{
 		debug('initializing '+key);
-		if(key.substring(0,2)!='./')
-			context={request:{url:{pathname:key}}};
-		else
-			context={request:{url:{pathname:key.substring(1)}}};
-			
+
 		var init;
 		if(key=='jnode')
 			init=exports.init;
@@ -221,15 +217,9 @@ if($('fs').existsSync(jnodeConfig))
 			init=$(key).init;
 		if(init)
 			init(config[key], app);
+
 		debug('initialized '+key);
 	}
-	context=null;
 }
 
 app.use(router);
-
-
-if(require.main===module)
-{
-	exports.run('192.168.68.11',81);
-}

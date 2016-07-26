@@ -93,6 +93,7 @@
             if((res.statusCode==302 || res.statusCode==301 || res.statusCode==307) && res.headers.location)
             {
                 $.ajax(res.headers.location, settings);
+                return;
             }
             
             var data = '';
@@ -102,6 +103,13 @@
 
 			res.setEncoding('utf8');
 
+			
+			if(settings.complete)
+			{
+			    settings.complete(res);
+			    return;
+			}
+			
 			res.on('data', function (d)
 			{
 				data += d;

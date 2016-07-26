@@ -5,10 +5,6 @@ var debug=require('debug')('jnode:core');
 var options={simpleRun:true};
 var key=false;
 
-process.on('uncaughtException', (err) => {
-  console.log(`Caught exception: ${err}`);
-});
-
 process.argv.forEach(function(arg, index){ 
 	if(index<2)
 		return;
