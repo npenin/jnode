@@ -102,13 +102,6 @@
                 settings.dataType = 'json';
 
 			res.setEncoding('utf8');
-
-			
-			if(settings.complete)
-			{
-			    settings.complete(res);
-			    return;
-			}
 			
 			res.on('data', function (d)
 			{
@@ -148,6 +141,14 @@
 					settings.error(data, res.statusCode, res);
 			});
         });
+
+
+		if($.isFunction(settings.complete))
+		{
+			request.on('response', function(res){
+				settings.complete(res);
+			});
+		}
 
         if ($.isFunction(settings.error))
             request.on('error', settings.error);
